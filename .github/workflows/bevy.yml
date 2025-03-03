@@ -17,9 +17,11 @@ jobs:
       with:
         nix_path: nixpkgs=channel:nixos-stable
     - name: Build wasm
-      run: nix build .#build-wasm
+      run: |
+        nix build .#build-wasm
+        cp -a result/web .
     - name: Deploy to GitHub Pages
       uses: JamesIves/github-pages-deploy-action@4.1.5/v4-folder-perms
       with:
         branch: gh-pages
-        folder: result/web
+        folder: ./web
