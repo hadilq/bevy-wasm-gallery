@@ -6,6 +6,8 @@ on:
 
 jobs:
   build-bevy:
+    permissions:
+      contents: write
     name: Build for Web with Bevy
     runs-on: ubuntu-latest
     
