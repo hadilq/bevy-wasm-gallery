@@ -10,6 +10,7 @@ pub fn main() {
                 primary_window: Some(Window {
                     resolution: WindowResolution::new(800.0, 800.0).with_scale_factor_override(1.0),
                     title: "Bevy WASM Gallery".to_string(),
+                    position: WindowPosition::Centered(MonitorSelection::Current),
                     ..default()
                 }),
                 ..default()
@@ -81,7 +82,6 @@ fn setup(
     let mut window = windows.single_mut();
     let window_width = window.resolution.width();
     let window_height = window.resolution.height();
-    window.position.center(MonitorSelection::Current);
     
     // Scale for mobile
     window.resolution.set_scale_factor_override(Some(1.0));
