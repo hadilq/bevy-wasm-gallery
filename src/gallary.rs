@@ -162,13 +162,17 @@ fn handle_input(
     let mut cursor_position = None;
     
     // Handle mouse clicks
-    if mouse_button_input.just_pressed(MouseButton::Left) ||
-        touches.read().filter(|touch| touch.phase == TouchPhase::Started).any(|_| true) {
+    if mouse_button_input.just_pressed(MouseButton::Left) {
         if let Some(position) = window.cursor_position() {
             cursor_position = Some(position);
         }
     }
     
+    // Handle touch input
+    for touch in touches.read().filter(|touch| touch.phase == TouchPhase::Started) {
+        cursor_position = Some(touch.position - window.ime_position);
+    }
+
     if let Some(position) = cursor_position {
         // Convert screen position to world coordinates
         let window_size = Vec2::new(window.resolution.width(), window.resolution.height());
