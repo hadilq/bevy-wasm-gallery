@@ -30,10 +30,7 @@
       buildInputs = [
         rust-toolchain
         wasm-bindgen-cli
-      ] ++ (with pkgs; [
-        alsa-lib.dev
-        udev.dev
-      ]);
+      ];
 
     in {
       devShells.default = pkgs.mkShell {
@@ -46,16 +43,33 @@
         ] ++ buildInputs;
       };
 
-      packages.build-wasm = pkgs.rustPlatform.buildRustPackage {
+      packages.build-wasm = pkgs.stdenv.mkDerivation rec {
         name = "build-wasm";
-        src = ./.;
         nativeBuildInputs = with pkgs; [
-          rustPlatform.bindgenHook
           pkg-config
+          rustPlatform.cargoSetupHook
+          rustPlatform.bindgenHook
+          rust-toolchain
         ];
+
         inherit buildInputs;
-        LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath buildInputs;
-        cargoHash = "sha256-XCFlJ8xAVLx2si6weWHQ2NXVeQmUYVvKob+9oPCb2g4=";
+        src = ./.;
+        cargoDeps = pkgs.rustPlatform.fetchCargoVendor {
+          inherit src;
+          name = "build-wasm-cargo";
+          hash = "sha256-8CR7mT54aHL8sUUSSPTPDAUpSNxW8Ilom3VDexWCGSI=";
+        };
+
+        postUnpack = ''
+          export CARGO_HOME=$PWD/.cargo
+        '';
+        buildPhase = ''
+          ./build-wasm.sh
+        '';
+        installPhase = ''
+          mkdir -p $out/bin
+          cp -a ./web $out
+        '';
       };
     });
 }
