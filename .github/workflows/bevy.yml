@@ -17,9 +17,7 @@ jobs:
       with:
         nix_path: nixpkgs=channel:nixos-stable
     - name: Build wasm
-      run: |
-        nix build .#build-wasm
-        cp -a result/web .
+      run: nix build .#build-wasm
     - name: Deploy to GitHub Pages
       uses: JamesIves/github-pages-deploy-action@v4
       with:
