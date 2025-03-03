@@ -1,0 +1,23 @@
+name: Bevy Build
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-bevy:
+    name: Build for Web with Bevy
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    - uses: cachix/install-nix-action@v27
+      with:
+        nix_path: nixpkgs=channel:nixos-stable
+    - name: Build wasm
+      run: nix build .#build-wasm
+    - name: Deploy to GitHub Pages
+      uses: JamesIves/github-pages-deploy-action@4.1.5
+      with:
+        branch: gh-pages
+        folder: result/web
