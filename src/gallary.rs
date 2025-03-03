@@ -1,7 +1,5 @@
 use bevy::{
-    prelude::*,
-    window::{PrimaryWindow, WindowResolution},
-    input::touch::TouchPhase,
+    input::touch::TouchPhase, prelude::*, window::{PrimaryWindow, WindowResolution}
 };
 
 // Main entry point
@@ -83,6 +81,7 @@ fn setup(
     let mut window = windows.single_mut();
     let window_width = window.resolution.width();
     let window_height = window.resolution.height();
+    window.position.center(MonitorSelection::Current);
     
     // Scale for mobile
     window.resolution.set_scale_factor_override(Some(1.0));
@@ -170,7 +169,9 @@ fn handle_input(
     
     // Handle touch input
     for touch in touches.read().filter(|touch| touch.phase == TouchPhase::Started) {
-        cursor_position = Some(touch.position - window.ime_position);
+        if let WindowPosition::At(position) = window.position {
+            cursor_position = Some(touch.position - position.as_vec2());
+        }
     }
 
     if let Some(position) = cursor_position {
