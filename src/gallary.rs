@@ -2,24 +2,29 @@ use bevy::{
     input::touch::TouchPhase, prelude::*, window::{PrimaryWindow, WindowResolution}
 };
 
-use crate::log;
-
 // Main entry point
 pub fn main() {
     App::new()
         .add_plugins(
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
-                    resolution: WindowResolution::new(800.0, 800.0).with_scale_factor_override(1.0),
+                    resolution: WindowResolution::new(5000.0, 5000.0) // Assuming 5000x5000 is our max resolution
+                        .with_scale_factor_override(1.0),
                     title: "Bevy WASM Gallery".to_string(),
-                    position: WindowPosition::Centered(MonitorSelection::Current),
+                    canvas: Some("#gallery-canvas".into()),
+                    fit_canvas_to_parent: true,
+                    prevent_default_event_handling: true,
+                    ime_enabled: true,
                     ..default()
                 }),
                 ..default()
             }),
         )
         .add_systems(Startup, setup)
-        .add_systems(Update, (handle_input, update_gallery_layout, update_animations))
+        .add_systems(
+            Update,
+            (maintain_aspect_ratio, handle_input, update_gallery_layout, update_animations)
+        )
         .run();
 }
 
@@ -130,6 +135,22 @@ fn setup(
     ));
 }
 
+fn maintain_aspect_ratio(
+    mut windows: Query<&mut Window>,
+) {
+    let mut window = windows.single_mut();
+
+    // Calculate the smallest dimension (width or height)
+    let min_dimension = window.physical_width().min(window.physical_height());
+    info!("min_dimension is {}", min_dimension);
+
+    // Update the viewport
+    window.resolution.set_physical_resolution(
+        min_dimension,
+        min_dimension,
+    );
+}
+
 // Handle user input (mouse clicks and touch)
 fn handle_input(
     mut commands: Commands,
@@ -170,11 +191,8 @@ fn handle_input(
     }
     
     // Handle touch input
-    for _touch in touches.read().filter(|touch| touch.phase == TouchPhase::Started) {
-        if let Some(position) = window.cursor_position() {
-            log::console(&format!("cursor_position is {position}"));
-            cursor_position = Some(position);
-        }
+    for touch in touches.read().filter(|touch| touch.phase == TouchPhase::Started) {
+        cursor_position = Some(touch.position);
     }
 
     if let Some(position) = cursor_position {

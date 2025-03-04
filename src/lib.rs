@@ -1,5 +1,4 @@
 mod gallary;
-mod log;
 
 use wasm_bindgen::prelude::*;
 use crate::gallary::main;
