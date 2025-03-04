@@ -2,6 +2,8 @@ use bevy::{
     input::touch::TouchPhase, prelude::*, window::{PrimaryWindow, WindowResolution}
 };
 
+use crate::log;
+
 // Main entry point
 pub fn main() {
     App::new()
@@ -168,9 +170,10 @@ fn handle_input(
     }
     
     // Handle touch input
-    for touch in touches.read().filter(|touch| touch.phase == TouchPhase::Started) {
-        if let WindowPosition::At(position) = window.position {
-            cursor_position = Some(touch.position - position.as_vec2());
+    for _touch in touches.read().filter(|touch| touch.phase == TouchPhase::Started) {
+        if let Some(position) = window.cursor_position() {
+            log::console(&format!("cursor_position is {position}"));
+            cursor_position = Some(position);
         }
     }
 
