@@ -12,13 +12,22 @@
             height: 100%;
             overflow: hidden;
             background-color: #333;
-            touch-action: none;
+        }
+        #canvas-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            margin: 0;
         }
         canvas {
             display: block;
-            width: 100%;
-            height: 100%;
-            margin: 0 auto;
+            background-color: #000;
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            margin: auto;
         }
         #loading {
             position: absolute;
@@ -32,6 +41,9 @@
     </style>
 </head>
 <body>
+    <div id="canvas-container">
+        <canvas id="gallery-canvas"/>
+    </div>
     <div id="loading">Loading...</div>
     
     <script type="module">
@@ -44,6 +56,7 @@
                 console.log("Starting WASM initialization...");
                 await init();
                 console.log("WASM initialization complete!");
+
                 document.getElementById('loading').style.display = 'none';
             } catch (e) {
                 console.error("Error loading WASM:", e);
