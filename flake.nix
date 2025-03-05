@@ -57,7 +57,7 @@
         cargoDeps = pkgs.rustPlatform.fetchCargoVendor {
           inherit src;
           name = "build-wasm-cargo";
-          hash = "sha256-8CR7mT54aHL8sUUSSPTPDAUpSNxW8Ilom3VDexWCGSI=";
+          hash = "sha256-/jH05x9kJGS8GEeil+jgFItFbwWGvszIA+kT2UsDaHc=";
         };
 
         postUnpack = ''
