@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-uuid = { version = "1.15.1", features = ["js"] }
-bevy = "0.12.1"
+uuid = { version = "1.12", features = ["js"] }
+bevy = "0.15.3"
 wasm-bindgen = "0.2.100"
 console_error_panic_hook = "0.1.7"
 

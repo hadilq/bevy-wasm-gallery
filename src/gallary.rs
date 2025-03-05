@@ -71,7 +71,7 @@ fn setup(
     mut windows: Query<&mut Window, With<PrimaryWindow>>,
 ) {
     // Camera
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
     
     // Load images
     let images = vec![
@@ -102,12 +102,9 @@ fn setup(
     // Spawn gallery items in a grid
     for i in 0..images.len() {
         commands.spawn((
-            SpriteBundle {
-                texture: images[i].clone(),
-                sprite: Sprite {
-                    custom_size: Some(Vec2::new(item_width, item_height)),
-                    ..default()
-                },
+            Sprite {
+                image: images[i].clone(),
+                custom_size: Some(Vec2::new(item_width, item_height)),
                 ..default()
             },
             GalleryItem {
@@ -121,14 +118,9 @@ fn setup(
     
     // Fullscreen overlay (invisible by default)
     commands.spawn((
-        SpriteBundle {
-            sprite: Sprite {
-                color: Color::rgba(0.0, 0.0, 0.0, 0.8),
-                custom_size: Some(Vec2::new(window_width, window_height)),
-                ..default()
-            },
-            transform: Transform::from_xyz(0.0, 0.0, 10.0),
-            visibility: Visibility::Hidden,
+        Sprite {
+            color: Color::srgba(0.0, 0.0, 0.0, 0.8),
+            custom_size: Some(Vec2::new(window_width, window_height)),
             ..default()
         },
         FullscreenOverlay,
@@ -158,7 +150,7 @@ fn handle_input(
     gallery_items: Query<(Entity, &Transform, &mut GalleryItem)>,
     mut fullscreen_overlay: Query<(Entity, &mut Visibility), With<FullscreenOverlay>>,
     gallery_images: Res<GalleryImages>,
-    mouse_button_input: Res<Input<MouseButton>>,
+    mouse_button_input: Res<ButtonInput<MouseButton>>,
     mut touches: EventReader<TouchInput>,
     mut animation_state: ResMut<AnimationState>,
 ) {
@@ -222,13 +214,9 @@ fn handle_input(
                 
                 // Show expanded image
                 let expanded_entity = commands.spawn((
-                    SpriteBundle {
-                        texture: gallery_images.images[item.index].clone(),
-                        sprite: Sprite {
-                            custom_size: Some(Vec2::new(item.width, item.height)),
-                            ..default()
-                        },
-                        transform: Transform::from_xyz(0.0, 0.0, 15.0),
+                    Sprite {
+                        image: gallery_images.images[item.index].clone(),
+                        custom_size: Some(Vec2::new(item.width, item.height)),
                         ..default()
                     },
                     GalleryItem {
@@ -305,7 +293,7 @@ fn update_animations(
     if let Some((entity, progress)) = animation_state.expanding {
         if let Ok((mut transform, mut sprite, _)) = gallery_items.get_mut(entity) {
             // Calculate new progress
-            let new_progress = (progress + time.delta_seconds() * animation_state.animation_speed).min(1.0);
+            let new_progress = (progress + time.delta_secs() * animation_state.animation_speed).min(1.0);
             
             // Apply easing function (cubic ease out)
             let eased_progress = 1.0 - (1.0 - new_progress).powi(3);
@@ -336,7 +324,7 @@ fn update_animations(
     if let Some((entity, progress)) = animation_state.collapsing {
         if let Ok((_transform, mut sprite, _)) = gallery_items.get_mut(entity) {
             // Calculate new progress
-            let new_progress = (progress + time.delta_seconds() * animation_state.animation_speed).min(1.0);
+            let new_progress = (progress + time.delta_secs() * animation_state.animation_speed).min(1.0);
             
             // Apply easing function (cubic ease in)
             let eased_progress = new_progress.powi(3);
@@ -350,7 +338,7 @@ fn update_animations(
             
             // Update opacity by changing alpha
             let mut color = sprite.color;
-            color.set_a(1.0 - eased_progress);
+            let _ = color.set(Box::new(1.0 - eased_progress));
             sprite.color = color;
             
             // Update progress
