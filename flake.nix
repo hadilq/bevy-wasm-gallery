@@ -64,7 +64,8 @@
           export CARGO_HOME=$PWD/.cargo
         '';
         buildPhase = ''
-          ./build-wasm.sh
+          ## Switch to build-wasm.sh after debugging finished!
+          ./debug-build-wasm.sh
         '';
         installPhase = ''
           mkdir -p $out

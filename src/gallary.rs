@@ -28,6 +28,16 @@ pub fn main() {
         .run();
 }
 
+// Constants
+#[derive(Resource)]
+struct GallaryMeasures {
+    grid_size: usize,
+    padding: f32,
+    item_width: Option<f32>,
+    item_height: Option<f32>,
+    offset_dimension: Option<u32>,
+}
+
 // Asset handles for our images
 #[derive(Resource)]
 struct GalleryImages {
@@ -39,8 +49,6 @@ struct GalleryImages {
 struct GalleryItem {
     index: usize,
     is_expanded: bool,
-    width: f32,
-    height: f32,
 }
 
 // Component for the fullscreen overlay
@@ -82,36 +90,35 @@ fn setup(
         asset_server.load("bread.png"),
         asset_server.load("egg.png"),
     ];
-    
+
     commands.insert_resource(GalleryImages { images: images.clone() });
     commands.insert_resource(AnimationState::default());
     
     let mut window = windows.single_mut();
     let window_width = window.resolution.width();
     let window_height = window.resolution.height();
-    
+
     // Scale for mobile
     window.resolution.set_scale_factor_override(Some(1.0));
     
     // Calculate grid layout
     let grid_size = 3; // 3x3 grid
     let padding = 10.0;
-    let item_width = (window_width / grid_size as f32) - (padding * 2.0);
-    let item_height = (window_height / grid_size as f32) - (padding * 2.0);
     
+    commands.insert_resource(GallaryMeasures {
+        grid_size, padding, item_width: None, item_height: None, offset_dimension: None,
+    });
+
     // Spawn gallery items in a grid
     for i in 0..images.len() {
         commands.spawn((
             Sprite {
                 image: images[i].clone(),
-                custom_size: Some(Vec2::new(item_width, item_height)),
                 ..default()
             },
             GalleryItem {
                 index: i,
                 is_expanded: false,
-                width: item_width,
-                height: item_height,
             },
         ));
     }
@@ -129,18 +136,25 @@ fn setup(
 
 fn maintain_aspect_ratio(
     mut windows: Query<&mut Window>,
+    mut measures: ResMut<GallaryMeasures>,
 ) {
     let mut window = windows.single_mut();
 
     // Calculate the smallest dimension (width or height)
-    let min_dimension = window.physical_width().min(window.physical_height());
+    let (min_dimension, offset_dimension) = if window.physical_width() < window.physical_height() {
+        (window.physical_width(), window.physical_height() - window.physical_width())
+    } else {
+        (window.physical_height(), window.physical_width() - window.physical_height())
+    };
     info!("min_dimension is {}", min_dimension);
+    measures.offset_dimension = Some(offset_dimension);
 
     // Update the viewport
     window.resolution.set_physical_resolution(
         min_dimension,
         min_dimension,
     );
+    info!("min_dimension is {}", min_dimension);
 }
 
 // Handle user input (mouse clicks and touch)
@@ -150,6 +164,7 @@ fn handle_input(
     gallery_items: Query<(Entity, &Transform, &mut GalleryItem)>,
     mut fullscreen_overlay: Query<(Entity, &mut Visibility), With<FullscreenOverlay>>,
     gallery_images: Res<GalleryImages>,
+    measures: Res<GallaryMeasures>,
     mouse_button_input: Res<ButtonInput<MouseButton>>,
     mut touches: EventReader<TouchInput>,
     mut animation_state: ResMut<AnimationState>,
@@ -187,6 +202,9 @@ fn handle_input(
         cursor_position = Some(touch.position);
     }
 
+    let item_width = if let Some(width) = measures.item_width { width } else { return; };
+    let item_height = if let Some(height) = measures.item_height { height } else { return; };
+
     if let Some(position) = cursor_position {
         // Convert screen position to world coordinates
         let window_size = Vec2::new(window.resolution.width(), window.resolution.height());
@@ -216,14 +234,12 @@ fn handle_input(
                 let expanded_entity = commands.spawn((
                     Sprite {
                         image: gallery_images.images[item.index].clone(),
-                        custom_size: Some(Vec2::new(item.width, item.height)),
+                        custom_size: Some(Vec2::new(item_width, item_height)),
                         ..default()
                     },
                     GalleryItem {
                         index: item.index,
                         is_expanded: true,
-                        width: item.width,
-                        height: item.height,
                     },
                 )).id();
                 animation_state.expanding = Some((expanded_entity, 0.0));
@@ -238,6 +254,7 @@ fn handle_input(
 fn update_gallery_layout(
     windows: Query<&Window, (With<PrimaryWindow>, Changed<Window>)>,
     mut gallery_items: Query<(&mut Transform, &mut Sprite, &GalleryItem), Without<FullscreenOverlay>>,
+    mut measures: ResMut<GallaryMeasures>,
     mut fullscreen_overlay: Query<(&mut Transform, &mut Sprite), With<FullscreenOverlay>>,
 ) {
     let window = match windows.get_single() {
@@ -255,11 +272,12 @@ fn update_gallery_layout(
         transform.translation.y = 0.0;
     }
     
-    // Calculate new grid layout
-    let grid_size = 3; // 3x3 grid
-    let padding = 10.0;
+    let grid_size = measures.grid_size;
+    let padding = measures.padding;
     let item_width = (window_width / grid_size as f32) - (padding * 2.0);
     let item_height = (window_height / grid_size as f32) - (padding * 2.0);
+    measures.item_width = Some(item_width);
+    measures.item_height = Some(item_height);
     
     // Update non-expanded gallery items
     for (mut transform, mut sprite, item) in gallery_items.iter_mut() {
